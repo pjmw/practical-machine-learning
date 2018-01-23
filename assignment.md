@@ -1,26 +1,20 @@
 Introduction
 ------------
 
-Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now
-possible to collect a large amount of data about personal activity
-relatively inexpensively. These type of devices are part of the
-quantified self movement – a group of enthusiasts who take measurements
-about themselves regularly to improve their health, to find patterns in
-their behavior, or because they are tech geeks. One thing that people
-regularly do is quantify how much of a particular activity they do, but
-they rarely quantify how well they do it. In this project, your goal
-will be to use data from accelerometers on the belt, forearm, arm, and
-dumbell of 6 participants. They were asked to perform barbell lifts
-correctly and incorrectly in 5 different ways.
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways.
 
-    library(caret)
+``` r
+library(caret)
+```
 
     ## Loading required package: lattice
 
     ## Loading required package: ggplot2
 
-    library(rpart)
-    library(dplyr)
+``` r
+library(rpart)
+library(dplyr)
+```
 
     ## 
     ## Attaching package: 'dplyr'
@@ -33,58 +27,68 @@ correctly and incorrectly in 5 different ways.
     ## 
     ##     intersect, setdiff, setequal, union
 
-    set.seed(1)
-    training <- read.csv("pml-training.csv", na.strings=c("", "NA", "#DIV/0!"), row.names = 1)
-    testing <- read.csv("pml-testing.csv", na.strings=c("", "NA", "#DIV/0!"), row.names = 1)
-    training <- tbl_df(training)
-    testing <- tbl_df(testing)
+``` r
+set.seed(1)
+training <- read.csv("pml-training.csv", na.strings=c("", "NA", "#DIV/0!"), row.names = 1)
+testing <- read.csv("pml-testing.csv", na.strings=c("", "NA", "#DIV/0!"), row.names = 1)
+training <- tbl_df(training)
+testing <- tbl_df(testing)
+```
 
-The original file contains 159 columns with over 19000 rows. We will
-remove columns with missing values:
+The original file contains 159 columns with over 19000 rows. We will remove columns with missing values:
 
-    training <- training[,colSums(is.na(training)) == 0]
-    testing <- testing[,colSums(is.na(testing)) == 0]
+``` r
+training <- training[,colSums(is.na(training)) == 0]
+testing <- testing[,colSums(is.na(testing)) == 0]
+```
 
 Also we will remove unnecessary columns such as the first 6 columns:
 
-    training <- training[,-c(1:6)]
-    testing <- testing[,-c(1:6)]
-    dim(training)
+``` r
+training <- training[,-c(1:6)]
+testing <- testing[,-c(1:6)]
+dim(training)
+```
 
     ## [1] 19622    53
 
-    dim(testing)
+``` r
+dim(testing)
+```
 
     ## [1] 20 53
 
-We split the training set into subtraining and subtesting sets in order
-to allow cross-validation:
+We split the training set into subtraining and subtesting sets in order to allow cross-validation:
 
-    index <- createDataPartition(y=training$classe, p=0.8, list=FALSE)
-    trainingData <- training[index, ]
-    testingData <- training[-index, ]
+``` r
+index <- createDataPartition(y=training$classe, p=0.8, list=FALSE)
+trainingData <- training[index, ]
+testingData <- training[-index, ]
+```
 
-The `classe` variable is a factor variable with 5 levels, A to E all of
-which occur in the same order of magnitude, as the following plot shows:
+The `classe` variable is a factor variable with 5 levels, A to E all of which occur in the same order of magnitude, as the following plot shows:
 
-    plot(trainingData$classe, main="levels of  `classe` within the subtraining set", xlab="levels", ylab="frequency")
+``` r
+plot(trainingData$classe, main="levels of  `classe` within the subtraining set", xlab="levels", ylab="frequency")
+```
 
-![](assignment_files/figure-markdown_strict/unnamed-chunk-5-1.png)
+![](assignment_files/figure-markdown_github/unnamed-chunk-5-1.png)
 
 Model selection
 ===============
 
-We try two different models, one based on decision trees, the other one
-random forest.
+We try two different models, one based on decision trees, the other one random forest.
 
 Decision trees
 --------------
 
 Our first model is by using decision trees:
 
-    model1 <- rpart(classe ~ ., data=trainingData, method="class")
-    prediction1 <- predict(model1, testingData, type="class")
-    confusionMatrix(prediction1, testingData$classe)
+``` r
+model1 <- rpart(classe ~ ., data=trainingData, method="class")
+prediction1 <- predict(model1, testingData, type="class")
+confusionMatrix(prediction1, testingData$classe)
+```
 
     ## Confusion Matrix and Statistics
     ## 
@@ -118,22 +122,25 @@ Our first model is by using decision trees:
     ## Detection Prevalence   0.2985   0.1685   0.2159  0.14173   0.1754
     ## Balanced Accuracy      0.9082   0.7664   0.8589  0.77145   0.8344
 
-The accuracy of the decision tree method is at **74 %** which is very
-low.
+The accuracy of the decision tree method is at **74 %** which is very low.
 
 Random Forest
 -------------
 
 Next, we try the random forest algorithm:
 
-    #model2 <- train(classe ~ ., data=trainingData, method="rf")  # takes forever
-    model2 <- train(classe ~ ., data=trainingData, method="rf", trControl=trainControl(method="none"), tuneGrid=data.frame(mtry=7)) # note by Mauricio Collaca on Coursera forum
-    #model2 <- randomForest(classe ~ ., data=trainingData) # alternative method
+``` r
+#model2 <- train(classe ~ ., data=trainingData, method="rf")  # takes forever
+model2 <- train(classe ~ ., data=trainingData, method="rf", trControl=trainControl(method="none"), tuneGrid=data.frame(mtry=7)) # note by Mauricio Collaca on Coursera forum
+#model2 <- randomForest(classe ~ ., data=trainingData) # alternative method
+```
 
 The in sample error rate is given by:
 
-    prediction2 <- predict(model2, trainingData)
-    confusionMatrix(prediction2, trainingData$classe)
+``` r
+prediction2 <- predict(model2, trainingData)
+confusionMatrix(prediction2, trainingData$classe)
+```
 
     ## Confusion Matrix and Statistics
     ## 
@@ -167,11 +174,12 @@ The in sample error rate is given by:
     ## Detection Prevalence   0.2843   0.1935   0.1744   0.1639   0.1838
     ## Balanced Accuracy      1.0000   1.0000   1.0000   1.0000   1.0000
 
-which is clear since we used the same data set. The out-of-sample error
-rate must be less:
+which is clear since we used the same data set. The out-of-sample error rate must be less:
 
-    prediction2 <- predict(model2, testingData)
-    confusionMatrix(prediction2, testingData$classe)
+``` r
+prediction2 <- predict(model2, testingData)
+confusionMatrix(prediction2, testingData$classe)
+```
 
     ## Confusion Matrix and Statistics
     ## 
@@ -205,11 +213,12 @@ rate must be less:
     ## Detection Prevalence   0.2845   0.1940   0.1751   0.1624   0.1840
     ## Balanced Accuracy      0.9987   0.9972   0.9951   0.9935   0.9990
 
-A value of over **99.5%** of accuracy is very good. We will use this
-model to predict our 20 test cases:
+A value of over **99.5%** of accuracy is very good. We will use this model to predict our 20 test cases:
 
-    prediction3 <- predict(model2, testing)
-    prediction3
+``` r
+prediction3 <- predict(model2, testing)
+prediction3
+```
 
     ##  [1] B A B A A E D B A A B C B A E E A B B B
     ## Levels: A B C D E
